@@ -1,0 +1,69 @@
+#  __*__ coding: utf-8 __*__
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+from sklearn.linear_model import LogisticRegression
+
+n_features = 100     #  特征数量
+n_samples =  1000  #  训练集大小
+
+def sigmoid(X, w):
+    return  1/ (1 + np.exp(-np.dot(X, w)))
+
+def create_data():
+    X = np.random.randn(n_samples, n_features)
+    weights = np.random.randn(n_features)        #  参数
+    y = sigmoid(X, weights)
+    #  添加噪声
+    noise = stats.norm.rvs(loc=0, scale=1. / np.sqrt(4.), size = n_samples)
+    y = y + noise
+    y[y > 0.5] = 1
+    y[y < 0.5] = 0
+    return X, y, weights
+
+def test():
+    X, y, w = create_data()
+
+    #  初始化参数
+    w1 = np.random.randn(n_features)
+    #  学习率
+    a = 0.0001
+    n_iters = 8000   #  迭代次数
+    err_list = []
+    #  加上l2正则化的参数学习
+    l = 0.001  # 正则化系数
+    w2 = np.random.randn(n_features)
+    for i in range(n_iters):
+        
+        randIndex = np.random.randint(0, n_samples, 100).tolist()  #  从训练集中随机选择100个例子
+        X_ = X[randIndex, :]
+        y_ = y[randIndex]
+        err1 = sigmoid(X_, w1) - y_
+        if i % 100 == 0:
+            err_list.append(np.sum(err1)/ 100.)
+        w1 = w1 - a * np.dot(X_.T, err1)
+        err2 = sigmoid(X_, w2) - y_
+        w2 = w2 - a * np.dot(X_.T, err2) + (l / 100) * w2
+    print (w2)
+    #  使用sklearn进行测试
+    clf = LogisticRegression()
+    clf.fit(X, y)
+    #  可视化结果
+    fig = plt.figure(figsize=(6,5))
+    #  参数真实取值
+    plt.plot(w, color="darkblue", linestyle='-', linewidth=1, label= "real weights")
+    print (w1)
+    plt.plot(w1, color="orange", linestyle=':', linewidth=1, label="fit")
+    plt.plot(clf.coef_.tolist()[0], color="red", linestyle="-", linewidth=1, label="sklearn")
+    plt.plot(w2, color="green", linestyle="-", linewidth=1, label="l2")
+    plt.xlabel("features")
+    plt.ylabel("参数值")
+    plt.legend(loc=1)
+    #  绘制误差随迭代次数的变化
+    fig = plt.figure(figsize=(6, 5))
+    plt.plot(err_list, color="orange", linestyle=':', linewidth=1, label="error")
+    plt.xlabel("迭代次数")
+    plt.ylabel("误差率")
+    plt.legend(loc=1)
+    plt.show()
+test()
